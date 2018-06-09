@@ -1,0 +1,155 @@
+<!-- General header stuff, don't bother your pretty head too much about this -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Basic Demonstration - crossfilter.js and dc.js</title>
+    <meta charset="UTF-8">
+    <!-- These are the style libraries -->
+    <link rel="stylesheet" type="text/css" href="./css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="./css/dc.css"/>
+    <style>
+
+/* This is the CSS portion - it styles the page*/
+
+    html {
+        min-height: 100%;
+    }
+
+    body {
+        height: 100%; /* or min-height */
+        padding:0;
+        margin:0;
+        background: #1d8acb;
+    }
+
+    div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /*Style for the headers*/
+    h5 {
+      color: #ff4c51;
+    }
+
+    /*Custom the style of the dc.js charts here*/
+    /*Anything else you want to customise, just go to developer tools to find out the relevant classes/ids*/
+    .dc-chart .axis path, .dc-chart .axis line {
+      stroke: white;
+    }
+
+    .dc-chart .axis text {
+      fill: white;
+    }
+
+    .dc-chart .pie-slice{
+      fill: white;
+      font-size: 10px;
+    }
+    </style>
+    
+</head>
+<body>
+<!-- What you see on your browser -->
+
+<div class='row'>
+  <h5>Super simple charts with crossfilter.js and dc.js</h5>
+</div>
+
+<div class='row'>
+  <hr/>
+</div>
+
+<div class="row">
+<div class="col-6" id = 'rowchart'></div>
+<div class="col-6" id = 'piechart'></div>
+</div>
+<!-- These are the javascript libraries -->
+<script type="text/javascript" src="./js/d3.js"></script>
+<script type="text/javascript" src="./js/crossfilter.js"></script>
+<script type="text/javascript" src="./js/dc.js"></script>
+<script type="text/javascript" src="./js/jquery-3.2.1.min.js"></script>
+<script type="text/javascript" src="./js/bootstrap.js"></script>
+
+<!-- Where the meaty part of the code should reside. This can also be in a separate javascript file -->
+<script type="text/javascript">
+// Data for loading, can also use d3.csv or d3.json
+var portfolioData = [
+    {Year: 2014, Asset: 'Equity', Return: 0.045},
+    {Year: 2014, Asset: 'Bond', Return: 0.025},
+    {Year: 2014, Asset: 'Gold', Return: 0.015},
+    {Year: 2014, Asset: 'Cash', Return: 0.005},
+
+    {Year: 2015, Asset: 'Equity', Return: 0.035},
+    {Year: 2015, Asset: 'Bond', Return: 0.035},
+    {Year: 2015, Asset: 'Gold', Return: 0.005},
+    {Year: 2015, Asset: 'Cash', Return: 0.005},
+
+    {Year: 2016, Asset: 'Equity', Return: 0.045},
+    {Year: 2016, Asset: 'Bond', Return: 0.025},
+    {Year: 2016, Asset: 'Gold', Return: 0.015},
+    {Year: 2016, Asset: 'Cash', Return: 0.005},
+
+    {Year: 2017, Asset: 'Equity', Return: 0.055},
+    {Year: 2017, Asset: 'Bond', Return: 0.035},
+    {Year: 2017, Asset: 'Gold', Return: 0.015},
+    {Year: 2017, Asset: 'Cash', Return: 0.005},
+
+    {Year: 2018, Asset: 'Equity', Return: 0.045},
+    {Year: 2018, Asset: 'Bond', Return: 0.025},
+    {Year: 2018, Asset: 'Gold', Return: 0.025},
+    {Year: 2018, Asset: 'Cash', Return: 0.005}
+];
+
+// Uncomment if you would like to debug and check values in console
+// console.log(portfolioData);
+
+// Data dimensions and groupings
+var datax = crossfilter(portfolioData);
+var yearDimension = datax.dimension(function(d) {return d.Year;});
+var assetDimension = datax.dimension(function(d) {return d.Asset;});
+var returnsPerYear = yearDimension.group().reduceSum(function(d) {return +d.Return;});
+var returnsPerAsset = assetDimension.group().reduceSum(function(d) {return +d.Return;});
+
+// This is used to compute the % for the piechart
+var all = yearDimension.groupAll();
+
+// Row Chart
+var returnsRowChart   = dc.rowChart("#rowchart");
+
+returnsRowChart
+    .dimension(yearDimension)
+    .group(returnsPerYear)
+    // .elasticX(true)
+    .controlsUseVisibility(true);
+
+returnsRowChart.xAxis().ticks(5).tickFormat(function(d){return d*100+'%';});
+
+returnsRowChart.ordinalColors(['#ffc0cb','#ff99a2', '#ff7379', '#ff4c51', '#ff2628']);
+
+// Pie Chart
+var returnsPieChart   = dc.pieChart("#piechart");
+
+returnsPieChart
+        .dimension(assetDimension)
+        .group(returnsPerAsset)
+        .innerRadius(50)
+        .controlsUseVisibility(true)
+        .on('pretransition', function(chart) {
+            chart.selectAll('text.pie-slice').text(function(d) {
+                return d.data.key + '-' + dc.utils.printSingleValue((d.endAngle - d.startAngle) / (2*Math.PI) * 100) + '%';
+            })
+        });
+
+returnsPieChart.ordinalColors(['#ffc0cb','#ff99a2','#ff4c51', '#ff2628']);
+// If we use this, the charts will not be linked together
+// returnsPieChart.render();
+
+dc.renderAll();
+
+</script>
+
+
+</body>
+</html>
